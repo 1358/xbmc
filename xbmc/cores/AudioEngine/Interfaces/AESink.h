@@ -73,6 +73,17 @@ public:
   virtual void Drain() {}
 
   /*
+    Discard audio the sink has already been handed but has not played yet.
+
+    Called when the engine flushes, e.g. on a seek or a channel change.
+    Returning audio buffers to the pool does not help there: what the sink
+    passed on to the OS keeps playing regardless. The default implementation
+    does nothing, which preserves the previous behaviour for every sink that
+    does not override it.
+   */
+  virtual void Flush() {}
+
+  /*
     Indicates if sink can handle volume control.
   */
   virtual bool HasVolume() { return false; }

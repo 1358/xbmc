@@ -1006,6 +1006,35 @@ void CAESinkAUDIOTRACK::Drain()
   m_pause_ms = 0.0;
 }
 
+void CAESinkAUDIOTRACK::Flush()
+{
+  if (!m_at_jni)
+    return;
+
+  CLog::Log(LOGDEBUG, "CAESinkAUDIOTRACK::Flush");
+  if (IsInitialized())
+  {
+    // AudioTrack.flush() only discards data while the track is not playing,
+    // so pause first. play() is issued again by the next AddPackets().
+    m_at_jni->pause();
+    m_at_jni->flush();
+  }
+
+  // The playback head restarts at zero after a flush, so everything derived
+  // from it has to restart with it - otherwise GetDelay() reports the delay of
+  // audio that no longer exists.
+  m_duration_written = 0;
+  m_headPos = 0;
+  m_headPosOld = 0;
+  m_timestampPos = 0;
+  m_stuckCounter = 0;
+  m_linearmovingaverage.clear();
+  m_stampTimer.SetExpired();
+  m_pause_ms = 0.0;
+  m_delay = 0.0;
+  m_hw_delay = 0.0;
+}
+
 void CAESinkAUDIOTRACK::Register()
 {
   AE::AESinkRegEntry entry;
