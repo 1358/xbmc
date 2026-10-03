@@ -982,7 +982,14 @@ void CAESinkAUDIOTRACK::AddPause(unsigned int millis)
   // blocking, sleeping roughly and GetDelay smoothing
   // In short: Shit in, shit out
   usleep(millis * 1000);
-  m_pause_ms += millis;
+
+  // Pause bursts stand in for buffered audio only if there is any. With nothing written since
+  // the last flush or drain - the idle silence between two streams - there is no buffer level
+  // to keep up. Booking them anyway lets AddPackets() write that much audio unthrottled once
+  // the new stream starts; the sink then runs ahead and ActiveAE pulls it back by pausing the
+  // track again, which is an audible gap in passthrough.
+  if (m_duration_written > 0.0)
+    m_pause_ms += millis;
 }
 
 void CAESinkAUDIOTRACK::Drain()
