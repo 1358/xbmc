@@ -810,7 +810,9 @@ void CAESinkAUDIOTRACK::GetDelay(AEDelayStatus& status)
 
   // track delay in local member
   m_delay = d;
-  status.SetDelay(d + GetRawStartupDelay());
+  // Together with the getLatency() start estimate the start-up lag is counted twice, so it is
+  // only the fallback where getLatency() is unavailable.
+  status.SetDelay(latency == -1 ? d + GetRawStartupDelay() : d);
 }
 
 // RAW passthrough: after a flush the output starts ~100 ms after the first write, with the
