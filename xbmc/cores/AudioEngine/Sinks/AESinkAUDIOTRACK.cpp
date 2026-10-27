@@ -771,6 +771,22 @@ void CAESinkAUDIOTRACK::GetDelay(AEDelayStatus& status)
       else
         m_hw_delay -= delay; // part that delay would not have
     }
+    else if (m_timestampPos == 0 && latency != -1)
+    {
+      // No timestamp yet after init/flush/drain, so the part of the delay below the
+      // AudioTrack is unknown and would count as 0 while ActiveAE aligns the new stream.
+      // Estimate it from getLatency() like the PCM path does until the first valid
+      // timestamp takes over.
+      const int atbuffer = m_at_jni->getBufferSizeInFrames();
+      const double buffertime = static_cast<double>(atbuffer) / m_sink_sampleRate;
+      const double estimate = latency / 1000.0 - buffertime;
+      m_hw_delay = (estimate > 0.0 && estimate < 1.0) ? estimate : 0.0;
+      CLog::Log(LOGDEBUG,
+                "CAESinkAUDIOTRACK::GetDelay: RAW start estimate latency={} ms bufferframes={} "
+                "buffertime={:.1f} ms estimate={:.1f} ms used={:.1f} ms written={:.1f} ms",
+                latency, atbuffer, buffertime * 1000, estimate * 1000, m_hw_delay * 1000,
+                m_duration_written * 1000);
+    }
   }
 
   if (usesAdvancedLogging)
