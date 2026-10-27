@@ -992,7 +992,8 @@ void CAESinkAUDIOTRACK::AddPause(unsigned int millis)
 
   // RAW has no actual pause packet to write. On an empty track, booking a
   // pause as queued audio would report delay for audio which does not exist.
-  if (!m_rawNeedsFlush)
+  const double queued = m_duration_written - static_cast<double>(m_headPos) / m_sink_sampleRate;
+  if (queued <= 0.0)
   {
     usleep(millis * 1000);
     return;
